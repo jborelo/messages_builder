@@ -19,6 +19,7 @@ class Message:
     """
     Represents a single message in a conversation.
     """
+
     role: Role
     content: Content
 
@@ -28,13 +29,6 @@ class Message:
 
     def to_dict(self) -> dict[str, str]:
         return {"role": self.role.value, "content": self.content}
-
-    # def same_content_as(self, other: "Message") -> bool:
-    #     if not isinstance(other, Message):
-    #         return False
-    #     return self.to_dict() == other.to_dict()
-    #
-
 
 
 @dataclass
@@ -49,7 +43,7 @@ class MessagesBuilder:
     def same_content_as(m1: Message, m2: Message) -> bool:
         return m1.role == m2.role and m1.content == m2.content
 
-    def change_message_state(self, msgid: MessageID, active: bool) -> None:
+    def set_message_active(self, msgid: MessageID, active: bool) -> None:
         for msg in self._messages:
             if msg.id == msgid:
                 msg.active = active
@@ -58,17 +52,15 @@ class MessagesBuilder:
     def generate_new_message_id(self) -> MessageID:
         return self._last_message_id + 1
 
-
     def get_last_active_message(self) -> Message | None:
         for msg in reversed(self._messages):
             if msg.active:
                 return msg
         return None
 
-
-    def _add_message(self, msg: Message) -> int | None:
+    def _add_message(self, msg: Message) -> MessageID | None:
         # add if empty ot not same as last
-        if self._messages and  self.same_content_as(msg, self.get_last_active_message()):
+        if self._messages and self.same_content_as(msg, self.get_last_active_message()):
             return None
 
         msg.id = self.generate_new_message_id()
@@ -76,19 +68,18 @@ class MessagesBuilder:
 
         self._messages.append(msg)
         return msg.id
+    
 
-
-
-    def add_message(self, role: Role, content: str) -> MessageID:
+    def add_message(self, role: Role, content: str) -> MessageID | None:
         return self._add_message(Message(role=role, content=content))
 
-    def add_system(self, content: str) -> MessageID:
+    def add_system(self, content: str) -> MessageID | None:
         return self.add_message(Role.SYSTEM, content)
 
-    def add_user(self, content: str) -> MessageID:
+    def add_user(self, content: str) -> MessageID | None:
         return self.add_message(Role.USER, content)
 
-    def add_assistant(self, content: str) -> MessageID:
+    def add_assistant(self, content: str) -> MessageID | None:
         return self.add_message(Role.ASSISTANT, content)
 
     def reset(self) -> None:
